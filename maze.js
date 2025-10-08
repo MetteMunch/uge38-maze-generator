@@ -1,21 +1,28 @@
+/*funktion til at returnere et tilfældigt tal mellem min og max. 
+Funktionen bruges til at vælge tilfældige startpositioner og naboer*/
+
 function randomInteger(min, max) {
     min = Math.ceil(min);
     max = Math.floor(max);
     return Math.floor(Math.random() * (max - min)) + min;
 }
 
+/*Denne klasse repræsentere en enkelt celle i labyrinten, hvor x,y er positionen*/
 class Cell {
     constructor(x, y) {
         this.x = x;
         this.y = y;
-        this.walls = {
+        this.walls = { //cellen starter med vægge på alle sider
             top: true,
             right: true,
             bottom: true,
             left: true,
         };
-        this.visited = false;
+        this.visited = false; //denne variabel bruges til at markere om cellen har været besøgt tidligere
     }
+
+    /*Funktion til at tegne væggene. ctx bruges til at tegne med. cellWidt er cellens størrelse
+    i pixels. */
 
     draw(ctx, cellWidth) {
         ctx.strokeStyle = '#000000';
