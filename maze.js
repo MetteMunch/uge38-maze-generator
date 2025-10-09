@@ -160,22 +160,54 @@ class Maze {
     }
   }
 
-  generate(interval = 40) {
+  generate(interval = 30, hopInterval = 8) {
     const start_x = randomInteger(0, this.cols);
     const start_y = randomInteger(0, this.rows);
     let currentCell = this.grid[start_x][start_y];
     let stack = [];
+    let stepCount = 0;
 
     currentCell.visited = true;
 
     const step = () => {
       if (!currentCell) {
-        // Ingen celler tilbage => færdig
-        clearInterval(timer);
-        console.log("✅ Maze generation complete!");
-        return;
+        // Find alle u-besøgte celler
+        let unvisited = [];
+        for (let i = 0; i < this.cols; i++) {
+          for (let j = 0; j < this.rows; j++) {
+            if (!this.grid[i][j].visited) unvisited.push(this.grid[i][j]);
+          }
+        }
+
+        // Hvis der ikke er flere — vi er færdige
+        if (unvisited.length === 0) {
+          clearInterval(timer);
+          console.log("✅ Maze generation complete!");
+          return;
+        }
+
+        // 🔹 Hop til et nyt sted
+        currentCell = unvisited[randomInteger(0, unvisited.length)];
+        currentCell.visited = true;
+
+        // 🔹 Forbind til en besøgt nabo, hvis muligt
+        let visitedNeighbors = [];
+        const neighbors = [
+          this.grid[currentCell.x]?.[currentCell.y - 1],
+          this.grid[currentCell.x - 1]?.[currentCell.y],
+          this.grid[currentCell.x]?.[currentCell.y + 1],
+          this.grid[currentCell.x + 1]?.[currentCell.y],
+        ].filter((n) => n && n.visited);
+
+        if (neighbors.length > 0) {
+          const neighbor = neighbors[randomInteger(0, neighbors.length)];
+          currentCell.punchWallDown(neighbor);
+        }
+
+        return; // gå videre til næste step
       }
 
+      // Normal DFS maze step
       let unvisitedNeighbors = currentCell.unvisitedNeighbors(this.grid);
 
       if (unvisitedNeighbors.length > 0) {
@@ -185,20 +217,27 @@ class Maze {
         stack.push(currentCell);
         currentCell = randomNeighborCell;
         currentCell.visited = true;
+        stepCount++;
       } else {
         currentCell = stack.pop();
       }
 
-      // Tegn maze på ny hver gang
+      // 🔸 Hop til nyt sted efter X celler
+      if (stepCount > hopInterval) {
+        currentCell = null;
+        stepCount = 0;
+      }
+
+      // Tegn labyrinten og marker den aktuelle celle
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
       this.draw();
 
-      if (currentCell) { //farver cellen vi er i
-            const px = currentCell.x * this.cellWidth;
-            const py = currentCell.y * this.cellWidth;
-            this.ctx.fillStyle = 'rgba(0, 255, 42, 0.4)'; // Rød med gennemsigtighed
-            this.ctx.fillRect(px, py, this.cellWidth, this.cellWidth);
-        }
+      if (currentCell) {
+        const px = currentCell.x * this.cellWidth;
+        const py = currentCell.y * this.cellWidth;
+        this.ctx.fillStyle = "rgba(255, 0, 0, 0.4)";
+        this.ctx.fillRect(px, py, this.cellWidth, this.cellWidth);
+      }
     };
 
     const timer = setInterval(step, interval);
@@ -209,7 +248,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const canvas = document.getElementById("canvas");
   const maze = new Maze(20, 20, canvas);
 
-  maze.generate(40);  //opdater hvert 3 sek, så 
+  maze.generate(60, 12); //opdater hvert 3 sek, så
 
   maze.draw();
 
