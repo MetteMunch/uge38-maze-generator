@@ -24,32 +24,32 @@ class Cell {
   /*Funktion til at tegne væggene. ctx bruges til at tegne med. cellWidt er cellens størrelse
     i pixels. */
 
-  draw(ctx, cellWidth) {
+  draw(ctx, cellWallSize) {
     ctx.strokeStyle = "#000000";
     ctx.lineWidth = 4;
     ctx.beginPath();
 
-    const px = this.x * cellWidth;
-    const py = this.y * cellWidth;
+    const px = this.x * cellWallSize;
+    const py = this.y * cellWallSize;
 
     ctx.moveTo(px, py);
 
     if (this.walls.left) {
-      ctx.lineTo(px, py + cellWidth);
+      ctx.lineTo(px, py + cellWallSize);
     } else {
-      ctx.moveTo(px, py + cellWidth);
+      ctx.moveTo(px, py + cellWallSize);
     }
 
     if (this.walls.bottom) {
-      ctx.lineTo(px + cellWidth, py + cellWidth);
+      ctx.lineTo(px + cellWallSize, py + cellWallSize);
     } else {
-      ctx.moveTo(px + cellWidth, py + cellWidth);
+      ctx.moveTo(px + cellWallSize, py + cellWallSize);
     }
 
     if (this.walls.right) {
-      ctx.lineTo(px + cellWidth, py);
+      ctx.lineTo(px + cellWallSize, py);
     } else {
-      ctx.moveTo(px + cellWidth, py);
+      ctx.moveTo(px + cellWallSize, py);
     }
 
     if (this.walls.top) {
@@ -139,23 +139,23 @@ class Maze {
     this.rows = rows;
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d");
-    this.cellWidth = canvas.width / cols;
+    this.cellWallSize = canvas.width / cols; //cellerne er retanglære, så beregnes kun udfra antal kolonner
     this.initializeGrid();
   }
 
   initializeGrid() {
-    for (let i = 0; i < this.rows; i += 1) {
+    for (let i = 0; i < this.cols; i += 1) {
       this.grid.push([]);
-      for (let j = 0; j < this.cols; j += 1) {
+      for (let j = 0; j < this.rows; j += 1) {
         this.grid[i].push(new Cell(i, j));
       }
     }
   }
 
   draw() {
-    for (let i = 0; i < this.rows; i += 1) {
-      for (let j = 0; j < this.cols; j += 1) {
-        this.grid[i][j].draw(this.ctx, this.cellWidth);
+    for (let i = 0; i < this.cols; i += 1) {
+      for (let j = 0; j < this.rows; j += 1) {
+        this.grid[i][j].draw(this.ctx, this.cellWallSize);
       }
     }
   }
@@ -233,10 +233,10 @@ class Maze {
       this.draw();
 
       if (currentCell) {
-        const px = currentCell.x * this.cellWidth;
-        const py = currentCell.y * this.cellWidth;
-        this.ctx.fillStyle = "rgba(255, 0, 0, 0.4)";
-        this.ctx.fillRect(px, py, this.cellWidth, this.cellWidth);
+        const px = currentCell.x * this.cellWallSize;
+        const py = currentCell.y * this.cellWallSize;
+        this.ctx.fillStyle = "rgba(0, 255, 132, 0.4)";
+        this.ctx.fillRect(px, py, this.cellWallSize, this.cellWallSize);
       }
     };
 
@@ -250,7 +250,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   maze.generate(60, 12); //opdater hvert 3 sek, så
 
-  maze.draw();
+  //maze.draw();
 
   console.log(maze);
 });
