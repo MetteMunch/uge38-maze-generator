@@ -61,7 +61,7 @@ class Cell {
     ctx.stroke();
   }
 
-  // find naboerne i grid vha. this.x og this.y
+  // find ikke besægte naboer i grid vha. this.x og this.y
   unvisitedNeighbors(grid) {
     let neighbors = [];
 
@@ -140,7 +140,7 @@ class Maze {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d");
     this.cellWallSize = canvas.width / cols; //cellerne er retanglære, så beregnes kun udfra antal kolonner
-    this.initializeGrid();
+    this.initializeGrid(); //her kaldes metoden for at oprette alle celler og fylde gitteret
   }
 
   initializeGrid() {
@@ -164,31 +164,31 @@ class Maze {
     const start_x = randomInteger(0, this.cols); 
     const start_y = randomInteger(0, this.rows);
     let currentCell = this.grid[start_x][start_y]; //Her vælges et tilfældigt startsted ud fra randomInteger()
-    let stack = []; //bruges til recursive backtracking (tilbagevendingssti)
-    let stepCount = 0;
+    let stack = []; //bruges til recursive backtracking. Her gemmes stien af besøgte celler, så den kan gå tilbage når der er ramt en blindgyde
+    let stepCount = 0; //bruges til at sammentælle hvor mange trin der er taget i den nuværende "sti", før et muligt hop
 
-    currentCell.visited = true;
+    currentCell.visited = true; //markeres true, da vi starter her
 
-    const step = () => { 
+    const step = () => { //Dette er funktionen som udfører ét trin i opbygningen af labyrinten
       
       // Normal DFS maze step
       let unvisitedNeighbors = currentCell.unvisitedNeighbors(this.grid);
 
-      if (unvisitedNeighbors.length > 0) {
+      if (unvisitedNeighbors.length > 0) { //hvis currentCell har ikke besøgte naboer
         const randomNeighborCell =
-          unvisitedNeighbors[randomInteger(0, unvisitedNeighbors.length)];
-        currentCell.punchWallDown(randomNeighborCell);
-        stack.push(currentCell);
-        currentCell = randomNeighborCell;
-        currentCell.visited = true;
-        stepCount++;
+          unvisitedNeighbors[randomInteger(0, unvisitedNeighbors.length)]; //så vælg en af disse
+        currentCell.punchWallDown(randomNeighborCell); //og fjern væggen
+        stack.push(currentCell); //currentCell gemmes i stack (sti som vi har været på)
+        currentCell = randomNeighborCell; //ny currentCell er nabocellen, som vi har fjernet væggen til
+        currentCell.visited = true; //Den nye celle angives som visited
+        stepCount++; //Der lægges 1 til vores antal trin
       } else {
-        currentCell = stack.pop();
+        currentCell = stack.pop();//Hvis ikke der er ubesøgte naboer, så gå tilbage på den allerede betrådte sti (stack) og tag den seneste
       }
 
-      // 🔸 Hop til nyt sted efter X celler
+      // Hop til nyt sted efter et vist antal trin (hopInterval)
       if (stepCount > hopInterval) {
-        currentCell = null;
+        currentCell = null; 
         stepCount = 0;
       }
 
@@ -244,7 +244,9 @@ class Maze {
       }
     };
 
-    const timer = setInterval(step, interval);
+    //dette er timeren, der kalder step-funktionen gentagne gange, så labyrinten skabes
+    //med animationseffekt og ikke tegnes på én gang
+    const timer = setInterval(step, interval); 
   }
 }
 
