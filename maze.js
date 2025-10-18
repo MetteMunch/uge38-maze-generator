@@ -21,7 +21,7 @@ class Cell {
     this.visited = false; //denne variabel bruges til at markere om cellen har været besøgt tidligere
   }
 
-  /*Funktion til at tegne væggene. ctx bruges til at tegne med. cellWidt er cellens størrelse
+  /*Funktion til at tegne væggene. ctx bruges til at tegne med. cellWallSize er cellens størrelse
     i pixels. */
 
   draw(ctx, cellWallSize) {
@@ -70,8 +70,8 @@ class Cell {
       const nord_x = this.x;
       const nord_y = this.y - 1;
       const nord_nabo = grid[nord_x][nord_y];
-      if (!nord_nabo.visited) {
-        neighbors.push(nord_nabo);
+      if (!nord_nabo.visited) { //hvis ikke nabo mod nord er blevet besøgt, så gem i liste
+        neighbors.push(nord_nabo); 
       }
     }
 
@@ -80,7 +80,7 @@ class Cell {
       const venstre_x = this.x - 1;
       const venstre_y = this.y;
       const venstre_nabo = grid[venstre_x][venstre_y];
-      if (!venstre_nabo.visited) {
+      if (!venstre_nabo.visited) { //hvis ikke nabo mod vest er blevet besøgt, så gem i liste
         neighbors.push(venstre_nabo);
       }
     }
@@ -90,7 +90,7 @@ class Cell {
       const syd_x = this.x;
       const syd_y = this.y + 1;
       const syd_nabo = grid[syd_x][syd_y];
-      if (!syd_nabo.visited) {
+      if (!syd_nabo.visited) { //hvis ikke nabo mod syd er blevet besøgt, så gem i liste
         neighbors.push(syd_nabo);
       }
     }
@@ -100,12 +100,12 @@ class Cell {
       const højre_x = this.x + 1;
       const højre_y = this.y;
       const højre_nabo = grid[højre_x][højre_y];
-      if (!højre_nabo.visited) {
+      if (!højre_nabo.visited) { //hvis ikke nabo mod øst er blevet besøgt, så gem i liste
         neighbors.push(højre_nabo);
       }
     }
 
-    return neighbors;
+    return neighbors; //returnerer en liste af nabo-celler, som ikke er besøgt endnu
   }
 
   punchWallDown(otherCell) {
@@ -161,52 +161,16 @@ class Maze {
   }
 
   generate(interval = 30, hopInterval = 8) {
-    const start_x = randomInteger(0, this.cols);
+    const start_x = randomInteger(0, this.cols); 
     const start_y = randomInteger(0, this.rows);
-    let currentCell = this.grid[start_x][start_y];
-    let stack = [];
+    let currentCell = this.grid[start_x][start_y]; //Her vælges et tilfældigt startsted ud fra randomInteger()
+    let stack = []; //bruges til recursive backtracking (tilbagevendingssti)
     let stepCount = 0;
 
     currentCell.visited = true;
 
-    const step = () => {
-      if (!currentCell) {
-        // Find alle u-besøgte celler
-        let unvisited = [];
-        for (let i = 0; i < this.cols; i++) {
-          for (let j = 0; j < this.rows; j++) {
-            if (!this.grid[i][j].visited) unvisited.push(this.grid[i][j]);
-          }
-        }
-
-        // Hvis der ikke er flere — vi er færdige
-        if (unvisited.length === 0) {
-          clearInterval(timer);
-          console.log("✅ Maze generation complete!");
-          return;
-        }
-
-        // 🔹 Hop til et nyt sted
-        currentCell = unvisited[randomInteger(0, unvisited.length)];
-        currentCell.visited = true;
-
-        // 🔹 Forbind til en besøgt nabo, hvis muligt
-        let visitedNeighbors = [];
-        const neighbors = [
-          this.grid[currentCell.x]?.[currentCell.y - 1],
-          this.grid[currentCell.x - 1]?.[currentCell.y],
-          this.grid[currentCell.x]?.[currentCell.y + 1],
-          this.grid[currentCell.x + 1]?.[currentCell.y],
-        ].filter((n) => n && n.visited);
-
-        if (neighbors.length > 0) {
-          const neighbor = neighbors[randomInteger(0, neighbors.length)];
-          currentCell.punchWallDown(neighbor);
-        }
-
-        return; // gå videre til næste step
-      }
-
+    const step = () => { 
+      
       // Normal DFS maze step
       let unvisitedNeighbors = currentCell.unvisitedNeighbors(this.grid);
 
@@ -226,6 +190,46 @@ class Maze {
       if (stepCount > hopInterval) {
         currentCell = null;
         stepCount = 0;
+      }
+
+      if (!currentCell) { //Hvis currentCell er null vil vi "hoppe" til et nyt område
+        // Find alle u-besøgte celler der HAR mindst én besøgt nabo
+        let candidates = [];
+        for (let i = 0; i < this.cols; i++) {
+          for (let j = 0; j < this.rows; j++) {
+            const cell = this.grid[i][j];
+            if (!cell.visited) {
+              const neighbors = [
+                this.grid[cell.x]?.[cell.y - 1],
+                this.grid[cell.x - 1]?.[cell.y],
+                this.grid[cell.x]?.[cell.y + 1],
+                this.grid[cell.x + 1]?.[cell.y],
+              ].filter((n) => n && n.visited);
+              if (neighbors.length > 0) {
+                candidates.push({ cell, neighbors });
+              }
+            }
+          }
+        }
+
+        // Hvis der ikke er nogen kandidater — vi er færdige
+        if (candidates.length === 0) {
+          clearInterval(timer);
+          console.log("✅ Maze generation complete!");
+          return;
+        }
+
+        // Vælg en tilfældig kandidat
+        const { cell, neighbors } =
+          candidates[randomInteger(0, candidates.length)];
+
+        // Forbind den til en af dens besøgte naboer
+        const neighbor = neighbors[randomInteger(0, neighbors.length)];
+        cell.punchWallDown(neighbor);
+        cell.visited = true;
+        currentCell = cell;
+
+        return;
       }
 
       // Tegn labyrinten og marker den aktuelle celle
